@@ -96,8 +96,3 @@ The tag is the version number without a leading `v` (set in `.npmrc`). Pushing i
     <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 42px !important; width: 172px !important;" >
   </a>
 </p>
-
-<p align="center">
-  <img src="https://komarev.com/ghpvc/?username=sm7urw2&label=Views&color=blue&style=flat-square" alt="Visitor Count">
-</p>
-
