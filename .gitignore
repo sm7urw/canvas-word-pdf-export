@@ -1,0 +1,14 @@
+# dependencies
+node_modules/
+
+# build output (published as release assets, not committed)
+main.js
+*.map
+
+# Obsidian per-vault plugin data
+data.json
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
