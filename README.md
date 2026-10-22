@@ -98,6 +98,6 @@ The tag is the version number without a leading `v` (set in `.npmrc`). Pushing i
 </p>
 
 <p align="center">
-  <img src="https://komarev.com/ghpvc/?username=sm7urw&label=Views&color=blue&style=flat-square" alt="Visitor Count">
+  <img src="https://komarev.com/ghpvc/?username=sm7urw2&label=Views&color=blue&style=flat-square" alt="Visitor Count">
 </p>
 
