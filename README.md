@@ -87,3 +87,17 @@ The tag is the version number without a leading `v` (set in `.npmrc`). Pushing i
 ## License
 
 [MIT](LICENSE)
+
+
+---
+
+<p align="center">
+  <a href="https://www.buymeacoffee.com/sm7urw" target="_blank">
+    <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 42px !important; width: 172px !important;" >
+  </a>
+</p>
+
+<p align="center">
+  <img src="https://komarev.com/ghpvc/?username=sm7urw&label=Views&color=blue&style=flat-square" alt="Visitor Count">
+</p>
+
