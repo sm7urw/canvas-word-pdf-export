@@ -1,4 +1,4 @@
-# Canvas Word & PDF Export
+# Canvas Word + PDF Export
 
 An [Obsidian](https://obsidian.md) plugin that exports a Canvas to **PDF** or **Word (.docx)**.
 
@@ -28,8 +28,8 @@ It can export a canvas in two ways:
 ### With BRAT (recommended until the plugin is in the community list)
 
 1. Install the **BRAT** plugin from Community plugins.
-2. In BRAT choose *Add beta plugin* and enter `YOUR-GITHUB-USERNAME/canvas-word-pdf-export`.
-3. Enable **Canvas Word & PDF Export** in Settings → Community plugins.
+2. In BRAT choose *Add beta plugin* and enter `sm7urw/canvas-word-pdf-export`.
+3. Enable **Canvas Word + PDF Export** in Settings → Community plugins.
 
 BRAT also works on iOS/iPadOS, where hidden folders such as `.obsidian` can't be reached from the Files app.
 

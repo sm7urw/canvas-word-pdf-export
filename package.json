@@ -1,6 +1,6 @@
 {
   "name": "canvas-word-pdf-export",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Obsidian plugin that exports a Canvas to PDF or Word, either as drawn or as a running text that follows the arrows.",
   "main": "main.js",
   "scripts": {
