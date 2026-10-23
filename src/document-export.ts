@@ -16,7 +16,7 @@ export interface DocOptions {
   groupHeadings: boolean;
 }
 
-const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+const sleep = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms));
 
 async function fillNode(
   app: App,

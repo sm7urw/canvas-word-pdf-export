@@ -5,6 +5,7 @@ import {
   ExternalHyperlink,
   Footer,
   HeadingLevel,
+  IRunOptions,
   ImageRun,
   LevelFormat,
   Packer,
@@ -58,8 +59,8 @@ function runs(inlines: Inline[], extra: { bold?: boolean; italics?: boolean; col
       out.push(new TextRun({ break: 1 }));
       continue;
     }
-    const run = (underline: boolean) =>
-      new TextRun({
+    const run = (underline: boolean) => {
+      const options: IRunOptions = {
         text: i.text,
         bold: i.bold || extra.bold,
         italics: i.italic || extra.italics,
@@ -70,7 +71,9 @@ function runs(inlines: Inline[], extra: { bold?: boolean; italics?: boolean; col
         highlight: i.highlight ? "yellow" : undefined,
         color: i.link ? "0563C1" : extra.color,
         underline: underline ? {} : undefined,
-      });
+      };
+      return new TextRun(options);
+    };
     out.push(i.link ? new ExternalHyperlink({ link: i.link, children: [run(true)] }) : run(false));
   }
   return out;
@@ -231,7 +234,7 @@ export async function blocksToDocx(blocks: Block[], opts: WriterOptions = {}): P
 
   // One numbering instance per ordered list so each starts at 1.
   const doc = new Document({
-    creator: "Canvas Word & PDF Export",
+    creator: "Canvas Word + PDF Export",
     title: "Canvas document",
     styles: {
       default: { document: { run: { font: "Calibri", size: 22 } } },

@@ -81,7 +81,7 @@ function normalizeInlines(inlines: Inline[]): Inline[] {
       if (out.length > 0) out.push(raw);
       continue;
     }
-    let text = raw.text.replace(/[ \t\r\n\f ]+/g, " ");
+    let text = raw.text.replace(/[ \t\r\n\f\u00a0]+/g, " ");
     const prev = out[out.length - 1];
     if (!prev || prev.kind === "break" || (prev.kind === "text" && prev.text.endsWith(" "))) {
       text = text.replace(/^ +/, "");
@@ -194,7 +194,7 @@ export async function normalizeImages(root: Element, maxWidth = 1600): Promise<v
       const okType = mime === "image/png" || mime === "image/jpeg" || mime === "image/gif";
       if (okType && w <= maxWidth) return;
       const scale = Math.min(1, maxWidth / w);
-      const canvas = document.createElement("canvas");
+      const canvas = createEl("canvas");
       canvas.width = Math.max(1, Math.round(w * scale));
       canvas.height = Math.max(1, Math.round(h * scale));
       const ctx = canvas.getContext("2d");
@@ -234,7 +234,7 @@ function listBlock(list: Element): Block {
   const items: ListItem[] = [];
   for (const li of Array.from(list.children)) {
     if (li.tagName.toUpperCase() !== "LI") continue;
-    const box = li.querySelector(":scope > input[type=checkbox], :scope > p > input[type=checkbox]") as HTMLInputElement | null;
+    const box = li.querySelector<HTMLInputElement>(":scope > input[type=checkbox], :scope > p > input[type=checkbox]");
     const task = li.classList.contains("task-list-item") || box !== null;
     const checked = task
       ? (box?.checked ?? false) || (li.getAttribute("data-task") ?? " ") !== " " && li.hasAttribute("data-task")

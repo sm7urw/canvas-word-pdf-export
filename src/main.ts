@@ -55,7 +55,7 @@ export default class CanvasPdfExportPlugin extends Plugin {
       await this.start();
     } catch (err) {
       console.error("[canvas-word-pdf-export] failed to start", err);
-      new Notice(`Canvas Word & PDF Export could not start: ${err instanceof Error ? err.message : String(err)}`, 20000);
+      new Notice(`Canvas Word + PDF Export could not start: ${err instanceof Error ? err.message : String(err)}`, 20000);
       throw err;
     }
   }
@@ -178,7 +178,6 @@ export default class CanvasPdfExportPlugin extends Plugin {
             diag.push(`${a.label}: ${e instanceof Error ? e.message : String(e)}`);
           }
         }
-        console.log("[canvas-word-pdf-export] attempts:", diag.join(" | "));
       }
       if (!pdf) {
         pdf = await rasterise();
@@ -258,14 +257,14 @@ export default class CanvasPdfExportPlugin extends Plugin {
   /** On phones/tablets there is no file manager step: open the result straight away. */
   private async showOnMobile(path: string, ext: string): Promise<void> {
     try {
-      await new Promise((r) => setTimeout(r, 400)); // let the vault index the new file
+      await new Promise((r) => window.setTimeout(r, 400)); // let the vault index the new file
       const f = this.app.vault.getAbstractFileByPath(path);
       if (ext === "pdf" && f instanceof TFile) {
         await this.app.workspace.getLeaf("tab").openFile(f);
       } else {
         // Word files can't be shown inside Obsidian; hand them to the system (share/preview sheet).
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (this.app as any).openWithDefaultApp?.(path);
+        const app = this.app as unknown as { openWithDefaultApp?: (path: string) => Promise<void> };
+        await app.openWithDefaultApp?.(path);
       }
     } catch (e) {
       console.warn("[canvas-word-pdf-export] could not open exported file", e);
@@ -283,7 +282,8 @@ export default class CanvasPdfExportPlugin extends Plugin {
   }
 
   async loadSettings() {
-    this.settings = Object.assign({}, DEFAULTS, await this.loadData());
+    const saved = (await this.loadData()) as Partial<Settings> | null;
+    this.settings = { ...DEFAULTS, ...saved };
   }
 
   async saveSettings() {

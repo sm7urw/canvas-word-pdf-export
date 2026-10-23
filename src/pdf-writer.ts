@@ -1,22 +1,17 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore - pdfmake ships its browser build without type declarations for these paths
-import pdfMakeImport from "pdfmake/build/pdfmake";
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import pdfFontsImport from "pdfmake/build/vfs_fonts";
+import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "pdfmake/build/vfs_fonts";
 import { Block, Inline, ListItem } from "./ir";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-const pdfMake: any = (pdfMakeImport as any).default ?? pdfMakeImport;
-const fonts: any = (pdfFontsImport as any).default ?? pdfFontsImport;
-pdfMake.vfs = fonts?.pdfMake?.vfs ?? fonts?.vfs ?? fonts;
+// The fonts module's shape differs between pdfmake builds; find the virtual file system in either place.
+const fonts = pdfFonts as unknown as { pdfMake?: { vfs?: Record<string, string> }; vfs?: Record<string, string> };
+pdfMake.vfs = fonts.pdfMake?.vfs ?? fonts.vfs ?? (pdfFonts as unknown as Record<string, string>);
 
 const CONTENT_WIDTH = 483; // A4 (595pt) minus 2 x 56pt margins
 
-type Node = any;
+type PdfNode = Record<string, unknown>;
 
-function textNodes(inlines: Inline[], extra: Record<string, unknown> = {}): Node[] {
-  return inlines.map((i): Node => {
+function textNodes(inlines: Inline[], extra: Record<string, unknown> = {}): PdfNode[] {
+  return inlines.map((i): PdfNode => {
     if (i.kind === "break") return { text: "\n" };
     const decoration: string[] = [];
     if (i.strike) decoration.push("lineThrough");
@@ -35,8 +30,8 @@ function textNodes(inlines: Inline[], extra: Record<string, unknown> = {}): Node
   });
 }
 
-function listItem(item: ListItem): Node {
-  const stack: Node[] = [];
+function listItem(item: ListItem): PdfNode {
+  const stack: PdfNode[] = [];
   let first = true;
   for (const b of item.blocks) {
     if (first && b.kind === "paragraph") {
@@ -51,7 +46,7 @@ function listItem(item: ListItem): Node {
   return { stack };
 }
 
-function blockToPdf(b: Block): Node[] {
+function blockToPdf(b: Block): PdfNode[] {
   switch (b.kind) {
     case "heading":
       return [
@@ -76,7 +71,7 @@ function blockToPdf(b: Block): Node[] {
         },
       ];
     case "quote": {
-      const stack: Node[] = [];
+      const stack: PdfNode[] = [];
       if (b.title && b.title.length) stack.push({ text: textNodes(b.title, { bold: true }), margin: [0, 0, 0, 4] });
       for (const child of b.blocks) stack.push(...blockToPdf(child));
       if (stack.length === 0) stack.push({ text: "" });
@@ -170,7 +165,7 @@ export async function blocksToPdf(blocks: Block[], opts: WriterOptions = {}): Pr
         resolve(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer);
       });
     } catch (e) {
-      reject(e);
+      reject(e instanceof Error ? e : new Error(String(e)));
     }
   });
 }

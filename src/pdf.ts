@@ -154,28 +154,52 @@ export function buildHtml(root: HTMLElement, width: number, height: number, opts
 
 // ---- Electron helpers ----------------------------------------------------
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-function nodeRequire(name: string): any {
-  return (window as any).require(name);
+interface ElectronWindow {
+  loadFile(path: string): Promise<void>;
+  webContents: {
+    printToPDF(options: { printBackground: boolean; preferCSSPageSize: boolean }): Promise<Uint8Array>;
+  };
+  destroy(): void;
 }
 
-function getRemote(): any | null {
+interface ElectronRemote {
+  BrowserWindow?: new (options: Record<string, unknown>) => ElectronWindow;
+  dialog?: {
+    showSaveDialog(options: {
+      defaultPath: string;
+      filters: { name: string; extensions: string[] }[];
+    }): Promise<{ canceled: boolean; filePath?: string }>;
+  };
+}
+
+interface NodeFs {
+  writeFileSync(path: string, data: string | Uint8Array, encoding?: string): void;
+  unlinkSync(path: string): void;
+}
+
+/** Node's require() only exists in the desktop app. */
+function nodeRequire<T>(name: string): T {
+  const req = (window as unknown as { require?: (id: string) => unknown }).require;
+  if (!req) throw new Error("Node modules are not available on this platform.");
+  return req(name) as T;
+}
+
+function getRemote(): ElectronRemote | null {
   try {
-    const e = nodeRequire("electron");
-    if (e?.remote) return e.remote;
+    const electron = nodeRequire<{ remote?: ElectronRemote }>("electron");
+    if (electron.remote) return electron.remote;
   } catch {
-    /* ignore */
+    // not available, try the standalone module below
   }
   try {
-    return nodeRequire("@electron/remote");
+    return nodeRequire<ElectronRemote>("@electron/remote");
   } catch {
     return null;
   }
 }
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const sleep = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms));
 
-/** Renders the HTML in a hidden window and returns PDF bytes, or null if Electron's printing is unavailable. */
 export const WINDOW_VARIANTS = 4;
 
 function windowOptions(variant: number): Record<string, unknown> {
@@ -197,17 +221,18 @@ function windowOptions(variant: number): Record<string, unknown> {
   }
 }
 
+/** Renders the HTML in a hidden window and returns PDF bytes, or null if Electron's printing is unavailable. */
 export async function htmlToPdf(html: string, variant = 0): Promise<ArrayBuffer | null> {
-  const remote = getRemote();
-  if (!remote?.BrowserWindow) return null;
+  const BrowserWindow = getRemote()?.BrowserWindow;
+  if (!BrowserWindow) return null;
 
-  const fs = nodeRequire("fs");
-  const os = nodeRequire("os");
-  const path = nodeRequire("path");
+  const fs = nodeRequire<NodeFs>("fs");
+  const os = nodeRequire<{ tmpdir(): string }>("os");
+  const path = nodeRequire<{ join(...parts: string[]): string }>("path");
   const tmp = path.join(os.tmpdir(), `canvas-word-pdf-export-${Date.now()}.html`);
   fs.writeFileSync(tmp, html, "utf8");
 
-  const win = new remote.BrowserWindow(windowOptions(variant));
+  const win = new BrowserWindow(windowOptions(variant));
   try {
     await win.loadFile(tmp);
     await sleep(variant === 0 ? 600 : 900);
@@ -222,42 +247,28 @@ export async function htmlToPdf(html: string, variant = 0): Promise<ArrayBuffer 
     try {
       win.destroy();
     } catch {
-      /* ignore */
+      // window already closed
     }
     try {
       fs.unlinkSync(tmp);
     } catch {
-      /* ignore */
+      // temp file already gone
     }
   }
 }
 
-/** Fallback: open the system print dialog from a hidden iframe (user picks "Save as PDF"). */
-export async function printViaIframe(html: string): Promise<void> {
-  const iframe = document.body.createEl("iframe");
-  iframe.setCssStyles({ position: "fixed", left: "-10000px", width: "1px", height: "1px" });
-  await new Promise<void>((resolve) => {
-    iframe.onload = () => resolve();
-    iframe.srcdoc = html;
-  });
-  await sleep(300);
-  iframe.contentWindow?.focus();
-  iframe.contentWindow?.print();
-  setTimeout(() => iframe.remove(), 60_000);
-}
-
 /** Ask the user where to save; returns null if cancelled or the dialog is unavailable. */
 export async function askSavePath(defaultName: string, ext = "pdf"): Promise<string | null> {
-  const remote = getRemote();
-  if (!remote?.dialog) return null;
-  const res = await remote.dialog.showSaveDialog({
+  const dialog = getRemote()?.dialog;
+  if (!dialog) return null;
+  const res = await dialog.showSaveDialog({
     defaultPath: defaultName,
     filters: [{ name: ext.toUpperCase(), extensions: [ext] }],
   });
   if (res.canceled || !res.filePath) return null;
-  return res.filePath as string;
+  return res.filePath;
 }
 
 export function writeExternalFile(filePath: string, data: ArrayBuffer): void {
-  nodeRequire("fs").writeFileSync(filePath, Buffer.from(data));
+  nodeRequire<NodeFs>("fs").writeFileSync(filePath, new Uint8Array(data));
 }

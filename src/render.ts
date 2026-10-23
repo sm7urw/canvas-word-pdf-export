@@ -96,7 +96,7 @@ export function resolveColor(c?: string): { solid: string; tint: string } | null
 }
 
 function sleep(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
+  return new Promise((r) => window.setTimeout(r, ms));
 }
 
 export function bufferToBase64(buf: ArrayBuffer): string {
@@ -109,15 +109,6 @@ export function bufferToBase64(buf: ArrayBuffer): string {
   return btoa(bin);
 }
 
-function blobToDataUri(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(r.result as string);
-    r.onerror = () => reject(r.error);
-    r.readAsDataURL(blob);
-  });
-}
-
 /** Replace every non-data image source with an inline data URI so the PDF window needs no app:// access. */
 export async function inlineImages(root: HTMLElement): Promise<void> {
   const imgs = Array.from(root.querySelectorAll("img"));
@@ -126,13 +117,26 @@ export async function inlineImages(root: HTMLElement): Promise<void> {
       const src = img.getAttribute("src");
       if (!src || src.startsWith("data:")) return;
       try {
-        const res = await fetch(src);
-        const blob = await res.blob();
-        img.setAttribute("src", await blobToDataUri(blob));
+        // Re-load with CORS so the canvas stays untainted and can be read back.
+        const copy = new Image();
+        copy.crossOrigin = "anonymous";
+        copy.src = src;
+        await copy.decode();
+        const w = copy.naturalWidth;
+        const h = copy.naturalHeight;
+        if (!w || !h) return;
+        const canvas = createEl("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(copy, 0, 0);
+        const jpeg = /\.jpe?g(\?|$)/i.test(src);
+        img.setAttribute("src", canvas.toDataURL(jpeg ? "image/jpeg" : "image/png", 0.92));
         img.removeAttribute("srcset");
         img.removeAttribute("loading");
       } catch {
-        /* leave as is */
+        // Cross-origin or undecodable images are left as they are.
       }
     })
   );

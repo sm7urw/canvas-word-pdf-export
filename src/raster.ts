@@ -32,9 +32,12 @@ function loadImage(url: string): Promise<HTMLImageElement> {
 function canvasToJpeg(canvas: HTMLCanvasElement): Promise<Uint8Array> {
   return new Promise((resolve, reject) => {
     canvas.toBlob(
-      async (blob) => {
-        if (!blob) return reject(new Error("Could not encode the canvas image."));
-        resolve(new Uint8Array(await blob.arrayBuffer()));
+      (blob) => {
+        if (!blob) {
+          reject(new Error("Could not encode the canvas image."));
+          return;
+        }
+        blob.arrayBuffer().then((buf) => resolve(new Uint8Array(buf)), reject);
       },
       "image/jpeg",
       0.92
@@ -135,7 +138,7 @@ export interface TextRun {
 
 /** Measure where each word lands, using the same CSS as the SVG rendering (in a hidden iframe). */
 export async function collectTextRuns(root: HTMLElement, width: number, height: number): Promise<TextRun[]> {
-  const iframe = document.createElement("iframe");
+  const iframe = createEl("iframe");
   iframe.style.cssText = `position:fixed;left:-300000px;top:0;border:0;width:${width}px;height:${height}px`;
   document.body.appendChild(iframe);
   try {
@@ -192,7 +195,7 @@ export function buildTextOps(
 ): string {
   if (runs.length === 0) return "";
   const k = place.w / width; // pt per css px
-  const ctx = document.createElement("canvas").getContext("2d");
+  const ctx = createEl("canvas").getContext("2d");
   if (ctx) ctx.font = "100px Helvetica, Arial, sans-serif";
   const f = (n: number) => n.toFixed(2);
   const ops: string[] = ["BT", "3 Tr"];
@@ -228,7 +231,7 @@ export async function canvasToRasterPdf(
     const scale = chooseScale(width, height);
     const cw = Math.max(1, Math.round(width * scale));
     const ch = Math.max(1, Math.round(height * scale));
-    const canvas = document.createElement("canvas");
+    const canvas = createEl("canvas");
     canvas.width = cw;
     canvas.height = ch;
     const ctx = canvas.getContext("2d");
