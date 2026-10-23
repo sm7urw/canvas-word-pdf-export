@@ -2,7 +2,7 @@
 
 An [Obsidian](https://obsidian.md) plugin that exports a Canvas to **PDF** or **Word (.docx)**.
 
-It can export a canvas in two ways:
+It can export a canvas in two different ways:
 
 - **As a document, following the arrows** – the canvas is read in the order of its arrows and written as a running text document, with the markdown formatting kept. Works on desktop **and mobile (iOS/iPadOS)**.
 - **As drawn** – a PDF that looks like the canvas: boxes, groups, colours, arrows and labels where you placed them. Desktop only.
