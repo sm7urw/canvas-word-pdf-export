@@ -5,6 +5,7 @@ import {
   Plugin,
   PluginSettingTab,
   Setting,
+  SettingDefinitionItem,
   TFile,
   normalizePath,
 } from "obsidian";
@@ -294,6 +295,102 @@ export default class CanvasPdfExportPlugin extends Plugin {
 class CanvasPdfExportSettingTab extends PluginSettingTab {
   constructor(app: App, private plugin: CanvasPdfExportPlugin) {
     super(app, plugin);
+  }
+
+  /** Declarative settings (Obsidian 1.13+): makes the settings searchable. Older versions use display(). */
+  getSettingDefinitions(): SettingDefinitionItem[] {
+    const folderDesc = Platform.isDesktopApp
+      ? "Leave empty to save next to the canvas file."
+      : "Leave empty to save next to the canvas file. On mobile the file is saved in the vault and opened/shared afterwards.";
+    const folder: SettingDefinitionItem = {
+      name: "Vault output folder",
+      desc: folderDesc,
+      control: { type: "text", key: "outputFolder", placeholder: "e.g. Exports" },
+    };
+    const items: SettingDefinitionItem[] = [
+      {
+        type: "group",
+        heading: "Document export (follow arrows)",
+        items: [
+          { name: "Canvas name as title", control: { type: "toggle", key: "docTitle" } },
+          {
+            name: "Arrow labels",
+            desc: "Write the text on an arrow as an italic line before the node it leads to.",
+            control: { type: "toggle", key: "docEdgeLabels" },
+          },
+          {
+            name: "Page numbers",
+            desc: "Add page numbers (e.g. 2 / 5) in the footer of the Word and PDF documents.",
+            control: { type: "toggle", key: "docPageNumbers" },
+          },
+          {
+            name: "Group names as headings",
+            desc: "Add a heading the first time the flow enters a group.",
+            control: { type: "toggle", key: "docGroupHeadings" },
+          },
+        ],
+      },
+    ];
+    if (!Platform.isDesktopApp) return [...items, folder];
+    return [
+      ...items,
+      {
+        type: "group",
+        heading: "Layout PDF (as drawn)",
+        items: [
+          {
+            name: "Page format",
+            desc: "“Fit to canvas” makes one page sized exactly to the canvas. A4 scales the canvas onto one A4 page.",
+            control: {
+              type: "dropdown",
+              key: "pageMode",
+              options: {
+                fit: "Fit to canvas (one custom-size page)",
+                "a4-landscape": "A4 landscape",
+                "a4-portrait": "A4 portrait",
+              },
+            },
+          },
+          {
+            name: "Always use light theme",
+            desc: "Print with the light theme even if Obsidian is in dark mode.",
+            control: { type: "toggle", key: "forceLight" },
+          },
+          {
+            name: "Export method",
+            desc: "Automatic makes a normal PDF with selectable text and falls back to an image-based PDF if that comes out blank. “Image” always uses the image-based PDF.",
+            control: {
+              type: "dropdown",
+              key: "exportMethod",
+              options: { auto: "Automatic", image: "Image-based PDF only" },
+            },
+          },
+          {
+            name: "Save PDF to",
+            control: {
+              type: "dropdown",
+              key: "saveTo",
+              options: { vault: "Inside the vault", ask: "Ask each time (save dialog)" },
+            },
+          },
+          folder,
+          {
+            name: "Save debug HTML",
+            desc: "Also save the intermediate HTML next to the PDF (for troubleshooting a blank or broken export).",
+            control: { type: "toggle", key: "debugHtml" },
+          },
+        ],
+      },
+    ];
+  }
+
+  getControlValue(key: string): unknown {
+    return (this.plugin.settings as unknown as Record<string, unknown>)[key];
+  }
+
+  async setControlValue(key: string, value: unknown): Promise<void> {
+    (this.plugin.settings as unknown as Record<string, unknown>)[key] = value;
+    await this.plugin.saveSettings();
   }
 
   display(): void {
