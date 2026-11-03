@@ -1,3 +1,5 @@
+![Canvas Word+PDF Export Features](./canvas-word-pdf-export-feature.png)
+
 # Canvas Word + PDF Export
 
 An [Obsidian](https://obsidian.md) plugin that exports a Canvas to **PDF** or **Word (.docx)**.
